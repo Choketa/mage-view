@@ -7,5 +7,8 @@ arrow keys to move the image up down left and right
 Idk how to implement dragging the image with your mouse
 
 **CONTROLS**
+
 arrow keys = moves the damn thing by 25 pixels
+
 press enter = you will find out.... by testing or reading my code
+
