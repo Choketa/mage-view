@@ -7,21 +7,44 @@
 #include <string.h>
 #include <err.h>
 
+typedef struct {	
+	const char *jpg;
+	const char *jpeg;
+	const char *png;
+} Filetype;
+
+Filetype filetype = {
+	.jpg  = ".jpg",
+	.jpeg = ".jpeg",
+	.png  = ".png"
+};
+
 
 int main (int argc, char *argv[]) {
-
-	int m_Width  = 0;  
-	int m_Height = 0; 
-	int m_BPP    = 0;    
 
 	if (argc == 1) {
 		err(1, "Please provide a filepath to your desired image");
 	}
 
-	Display *display = XOpenDisplay(NULL);
-	if (display == NULL) {
-		err(1, "XOpenDisplay: error");
+	const char *GetFileType(const char *filename) {
+		const char *dot = strrchr(filename, '.');
+		if(dot) return dot;
+		else err(1, "Invalid filetype. Try something called an image");
 	}
+
+	const char *type = GetFileType(argv[1]);
+	
+	if (strcmp(type, filetype.jpg) == 0);
+	else if (strcmp(type, filetype.jpeg) == 0);
+	else if (strcmp(type, filetype.png) == 0);
+	else err(1, "Invalid filetype. Only JPEGs and PNGs are supported");	
+
+	Display *display = XOpenDisplay(NULL);
+	if (display == NULL) err(1, "XOpenDisplay: error");
+
+	int m_Width;  
+	int m_Height; 
+	int m_BPP; 
 
 	unsigned char* m_LocalBuffer = stbi_load(
 			argv[1], 
@@ -65,7 +88,11 @@ int main (int argc, char *argv[]) {
 
 	GC gc = XCreateGC(display, window, 0, NULL);	
 
-	Atom wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
+	Atom wm_delete_window = XInternAtom(
+			display, 
+			"WM_DELETE_WINDOW", 
+			False);
+	
 	XSetWMProtocols(display, window, &wm_delete_window, 1);
 
 	XSelectInput(display, window, 
@@ -100,15 +127,13 @@ int main (int argc, char *argv[]) {
 
 				int speed = 25;
 
-				if (key == XK_Up) {
-					image_y -= speed;
-				} else if (key == XK_Down) {
-					image_y += speed;
-				} else if (key == XK_Left) {
-					image_x -= speed;
-				} else if (key == XK_Right) {
-					image_x += speed;
-				}
+				if (key == XK_Up)    image_y -= speed;
+				if (key == XK_Down)  image_y += speed;
+				if (key == XK_Left)  image_x -= speed;
+				if (key == XK_Right) image_x += speed;
+
+				if (key == XK_Return) Inverse();
+
 				redraw();
 			break;
 
