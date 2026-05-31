@@ -114,7 +114,7 @@ int main (int argc, char *argv[]) {
 				image_x, image_y, 
 				m_Width, 
 				m_Height);
-		XSync(display, False); // How the fuck do I fix this flickering issue?
+		XSync(display, False); // How the flip do I fix this flickering issue?
 	}
 	
 	XEvent event;
@@ -159,7 +159,7 @@ int main (int argc, char *argv[]) {
 
 			case ClientMessage:
 				if ((Atom) event.xclient.data.l[0] == wm_delete_window) {
-					printf("WM_SAVE_YOUSELF\n"); //TsodingDaily
+					printf("WM_SAVE_YOUSELF\n"); // This is apart of the official ICCCM documentation. Thank you Tsoding
 					return 0;
 				} 
 			break;

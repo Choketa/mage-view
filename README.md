@@ -1,5 +1,7 @@
 its similar to kobertdm bc i had implemented stb_image and gotten images to work the other day and figured I might aswell go on a side quest to create the worst image viewer ever
 
+this is boring and im quitting. yes this is not completed but it sort of works ok. End of story. The flickering will be fixed approximately in..... 500 years. Just live with it.
+
 ./mage <filepath>
 
 arrow keys to move the image up down left and right
