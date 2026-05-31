@@ -12,3 +12,9 @@ arrow keys = moves the damn thing by 25 pixels
 
 press enter = you will find out.... by testing or reading my code
 
+
+**NOTE**
+
+image will center when you resize/move the window. see XEvent.type == ConfigureNotify some docs somewhere idk
+
+Xlib documentation is pretty ass
