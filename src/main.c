@@ -19,7 +19,6 @@ Filetype filetype = {
 	.png  = ".png"
 };
 
-
 int main (int argc, char *argv[]) {
 
 	if (argc == 1) {
@@ -42,9 +41,9 @@ int main (int argc, char *argv[]) {
 	Display *display = XOpenDisplay(NULL);
 	if (display == NULL) err(1, "XOpenDisplay: error");
 
-	int m_Width;  
+	int m_Width;
 	int m_Height; 
-	int m_BPP; 
+	int m_BPP;
 
 	unsigned char* m_LocalBuffer = stbi_load(
 			argv[1], 
@@ -61,7 +60,7 @@ int main (int argc, char *argv[]) {
 			0x00000000,
 			0x00000000);
 
-	void Inverse() {
+	void inverse() {
 		for (int i = 0; i < m_Width * m_Height * 4; i += 4) {
 			unsigned char jakob = m_LocalBuffer[i];
 			m_LocalBuffer[i]    = m_LocalBuffer[i+2];
@@ -69,7 +68,7 @@ int main (int argc, char *argv[]) {
 		}
 	}
 	
-	Inverse(); 
+	inverse(); 
 	
 	XWindowAttributes wa = {0};	
 	XGetWindowAttributes(display, window, &wa);
@@ -97,28 +96,49 @@ int main (int argc, char *argv[]) {
 
 	XSelectInput(display, window, 
 			KeyPressMask | 
-			ExposureMask);
+			ExposureMask |
+			StructureNotifyMask);
 
 	XMapWindow(display, window);
 
-	int image_x = 0;
-	int image_y = 0;
+	int image_x  = 0;
+	int image_y  = 0;
+	int source_x = 0;
+	int source_y = 0;
 
-	void redraw(void) {
+	void redraw() {
 		XClearWindow(display, window);
 		XPutImage(display, window, 
 				gc, image, 
-				0, 0, 
+				source_x, source_y, 
 				image_x, image_y, 
 				m_Width, 
 				m_Height);
-		XSync(display, False);
+		XSync(display, False); // How the fuck do I fix this flickering issue?
 	}
 	
 	XEvent event;
 	while (XNextEvent(display, &event) == 0) {
 		switch (event.type) {
 			case Expose:
+				if (event.xexpose.count == 0) redraw();
+			break;
+			
+			case ConfigureNotify:
+				if (m_Width > event.xconfigure.width) {
+					image_x  = 0;
+					source_x = (m_Width  - event.xconfigure.width)  / 2;
+				} else {
+					image_x = (event.xconfigure.width  - m_Width)  / 2;
+					source_x = 0;
+				}
+				if (m_Height > event.xconfigure.height) {
+					image_y  = 0;
+					source_y = (m_Height - event.xconfigure.height) / 2;
+				} else {
+					image_y = (event.xconfigure.height - m_Height) / 2;
+					source_y = 0;
+				}
 				redraw();
 			break;
 
@@ -132,7 +152,7 @@ int main (int argc, char *argv[]) {
 				if (key == XK_Left)  image_x -= speed;
 				if (key == XK_Right) image_x += speed;
 
-				if (key == XK_Return) Inverse();
+				if (key == XK_Return) inverse();
 
 				redraw();
 			break;

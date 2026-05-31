@@ -1,5 +1,5 @@
 CC= gcc
-CFLAGS= -lX11 -lm
+CFLAGS= -lX11 -lXext -lm
 TARGET = mage
 
 SRCS = src/main.c
