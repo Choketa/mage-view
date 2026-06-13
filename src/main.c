@@ -1,3 +1,4 @@
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -45,13 +46,14 @@ int main (int argc, char *argv[]) {
 	int m_Height; 
 	int m_BPP;
 
+
 	unsigned char* m_LocalBuffer = stbi_load(
 			argv[1], 
 			&m_Width, 
 			&m_Height, 
 			&m_BPP, 4);
 
-	Window window = XCreateSimpleWindow(
+   	Window window = XCreateSimpleWindow(
 			display,
 			XDefaultRootWindow(display),
 			0, 0,
@@ -67,6 +69,7 @@ int main (int argc, char *argv[]) {
 			m_LocalBuffer[i+2]  = jakob;
 		}
 	}
+
 	
 	inverse(); 
 	
@@ -99,23 +102,29 @@ int main (int argc, char *argv[]) {
 			ExposureMask |
 			StructureNotifyMask);
 
+    Pixmap double_buffer =  XCreatePixmap(display, window, m_Width, m_Height, DefaultDepth(display, DefaultScreen(display)));
+
 	XMapWindow(display, window);
 
 	int image_x  = 0;
 	int image_y  = 0;
 	int source_x = 0;
 	int source_y = 0;
+    int win_Width = m_Width, win_Height = m_Height; //Make sure image is rendered differently depending on the window size
 
 	void redraw() {
-		XClearWindow(display, window);
-		XPutImage(display, window, 
+        XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
+        XFillRectangle(display, double_buffer, gc, 0, 0, win_Width, win_Height);
+		XPutImage(display, double_buffer, 
 				gc, image, 
 				source_x, source_y, 
 				image_x, image_y, 
 				m_Width, 
 				m_Height);
-		XSync(display, False); // How the flip do I fix this flickering issue?
-	}
+        XCopyArea(display, double_buffer, window, gc,
+              0, 0, win_Width, win_Height, 0, 0);
+        XFlush(display);
+    }
 	
 	XEvent event;
 	while (XNextEvent(display, &event) == 0) {
@@ -139,6 +148,13 @@ int main (int argc, char *argv[]) {
 					image_y = (event.xconfigure.height - m_Height) / 2;
 					source_y = 0;
 				}
+                if (win_Width != event.xconfigure.width || win_Height != event.xconfigure.height) {
+                   win_Width  = event.xconfigure.width;
+                   win_Height = event.xconfigure.height;
+                   XFreePixmap(display, double_buffer);
+                    double_buffer = XCreatePixmap(display, window, win_Width, win_Height,
+                                      DefaultDepth(display, DefaultScreen(display)));
+    }
 				redraw();
 			break;
 
@@ -160,7 +176,7 @@ int main (int argc, char *argv[]) {
 			case ClientMessage:
 				if ((Atom) event.xclient.data.l[0] == wm_delete_window) {
 					printf("WM_SAVE_YOUSELF\n"); // This is apart of the official ICCCM documentation. Thank you Tsoding
-					return 0;
+				return 0;
 				} 
 			break;
 		}
@@ -168,6 +184,7 @@ int main (int argc, char *argv[]) {
 
 	stbi_image_free(m_LocalBuffer);
 
+    XFreePixmap(display, double_buffer);
 	XUnmapWindow(display, window);
 	XDestroyWindow(display, window);
 	XCloseDisplay(display);

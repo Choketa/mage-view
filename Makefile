@@ -1,13 +1,14 @@
-CC= gcc
-CFLAGS= -lX11 -lXext -lm
-TARGET = mage
+CC = gcc
+CFLAGS =
+LDFLAGS = -lX11 -lXext -lm
 
+TARGET = mage
 SRCS = src/main.c
 
 all: $(TARGET)
 
-$(TARGET) : $(SRCS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS)
+$(TARGET): $(SRCS)
+	$(CC) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
 clean:
 	rm -f $(TARGET)
