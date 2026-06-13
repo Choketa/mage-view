@@ -1,12 +1,16 @@
 its similar to kobertdm bc i had implemented stb_image and gotten images to work the other day and figured I might aswell go on a side quest to create the worst image viewer ever
 
-this is boring and im quitting. yes this is not completed but it sort of works ok. End of story. The flickering will be fixed approximately in..... 500 years. Just live with it.
+
+**THANKS TO**
+Chocketa who fixed my flickering issue. Shout out to my boy
+
 
 ./mage <filepath>
 
 arrow keys to move the image up down left and right
 
 Idk how to implement dragging the image with your mouse
+
 
 **CONTROLS**
 
@@ -17,6 +21,4 @@ press enter = you will find out.... by testing or reading my code
 
 **NOTE**
 
-image will center when you resize/move the window. see XEvent.type == ConfigureNotify some docs somewhere idk
-
-Xlib documentation is pretty ass
+image will center when you resize/move the window. see XEvent.type == ConfigureNotify 
