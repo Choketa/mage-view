@@ -5,7 +5,10 @@ its similar to kobertdm bc i had implemented stb_image and gotten images to work
 Chocketa who fixed my flickering issue. Shout out to my boy
 
 
-./mage <filepath>
+```bash
+mage filepath
+```
+
 
 arrow keys to move the image up down left and right
 
