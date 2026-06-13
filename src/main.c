@@ -20,16 +20,81 @@ Filetype filetype = {
 	.png  = ".png"
 };
 
-int main (int argc, char *argv[]) {
+static int m_Width;
+static int m_Height; 
+static int m_BPP;
 
-	if (argc == 1) {
-		err(1, "Please provide a filepath to your desired image");
+static int image_x  = 0;
+static int image_y  = 0;
+static int source_x = 0;
+static int source_y = 0;
+static int win_Width;
+static int win_Height;
+
+static unsigned char *m_LocalBuffer;
+
+static Display *display;
+static XImage *image;
+
+static Pixmap double_buffer;
+static Window window;
+static XEvent event;
+static GC gc;
+
+const char *GetFileType(const char *filename) {
+	const char *dot = strrchr(filename, '.');
+	if(dot) return dot;
+	else err(1, "Invalid filetype. Try something called an image");
+}
+
+void inverse() {
+	for (int i = 0; i < m_Width * m_Height * 4; i += 4) {
+		unsigned char jakob = m_LocalBuffer[i];
+		m_LocalBuffer[i]    = m_LocalBuffer[i+2];
+		m_LocalBuffer[i+2]  = jakob;
+	}
+}
+
+void center() {
+	if (m_Width > event.xconfigure.width) {
+		image_x  = 0;
+		source_x = (m_Width  - event.xconfigure.width)  / 2;
+	} 
+
+	else {
+		image_x = (event.xconfigure.width  - m_Width)  / 2;
+		source_x = 0;
 	}
 
-	const char *GetFileType(const char *filename) {
-		const char *dot = strrchr(filename, '.');
-		if(dot) return dot;
-		else err(1, "Invalid filetype. Try something called an image");
+	if (m_Height > event.xconfigure.height) {
+		image_y  = 0;
+		source_y = (m_Height - event.xconfigure.height) / 2;
+	} 
+
+	else {
+		image_y = (event.xconfigure.height - m_Height) / 2;
+		source_y = 0;
+	}
+}
+
+void redraw() {
+	XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
+	XFillRectangle(display, double_buffer, gc, 0, 0, win_Width, win_Height);
+	XPutImage(display, double_buffer, 
+			gc, image, 
+			source_x, source_y, 
+			image_x, image_y, 
+			m_Width, 
+			m_Height);
+	XCopyArea(display, double_buffer, window, gc,
+		  0, 0, win_Width, win_Height, 0, 0);
+	XFlush(display);
+}
+
+int main (int argc, char *argv[]) 
+{
+	if (argc == 1) {
+		err(1, "Please provide a filepath to your desired image");
 	}
 
 	const char *type = GetFileType(argv[1]);
@@ -39,21 +104,20 @@ int main (int argc, char *argv[]) {
 	else if (strcmp(type, filetype.png) == 0);
 	else err(1, "Invalid filetype. Only JPEGs and PNGs are supported");	
 
-	Display *display = XOpenDisplay(NULL);
+	display = XOpenDisplay(NULL);
 	if (display == NULL) err(1, "XOpenDisplay: error");
 
-	int m_Width;
-	int m_Height; 
-	int m_BPP;
+	win_Width = m_Width;
+	win_Height = m_Height; //Make sure image is rendered differently depending on the window size
 
-
-	unsigned char* m_LocalBuffer = stbi_load(
+	
+	m_LocalBuffer = stbi_load(
 			argv[1], 
 			&m_Width, 
 			&m_Height, 
 			&m_BPP, 4);
 
-   	Window window = XCreateSimpleWindow(
+	window = XCreateSimpleWindow(
 			display,
 			XDefaultRootWindow(display),
 			0, 0,
@@ -61,26 +125,17 @@ int main (int argc, char *argv[]) {
 			0,
 			0x00000000,
 			0x00000000);
-
-	void inverse() {
-		for (int i = 0; i < m_Width * m_Height * 4; i += 4) {
-			unsigned char jakob = m_LocalBuffer[i];
-			m_LocalBuffer[i]    = m_LocalBuffer[i+2];
-			m_LocalBuffer[i+2]  = jakob;
-		}
-	}
-
 	
 	inverse(); 
 	
 	XWindowAttributes wa = {0};	
 	XGetWindowAttributes(display, window, &wa);
 
-	XImage *image = XCreateImage(
+	image = XCreateImage(
 			display,
 			wa.visual,
 			wa.depth,
-			ZPixmap, // Load of  bullshit
+			ZPixmap,
 			0,
 			m_LocalBuffer,
 			m_Width,
@@ -88,7 +143,7 @@ int main (int argc, char *argv[]) {
 			32,
 			m_Width * sizeof(int));
 
-	GC gc = XCreateGC(display, window, 0, NULL);	
+	gc = XCreateGC(display, window, 0, NULL);	
 
 	Atom wm_delete_window = XInternAtom(
 			display, 
@@ -102,31 +157,10 @@ int main (int argc, char *argv[]) {
 			ExposureMask |
 			StructureNotifyMask);
 
-    Pixmap double_buffer =  XCreatePixmap(display, window, m_Width, m_Height, DefaultDepth(display, DefaultScreen(display)));
+    double_buffer =  XCreatePixmap(display, window, m_Width, m_Height, DefaultDepth(display, DefaultScreen(display)));
 
 	XMapWindow(display, window);
 
-	int image_x  = 0;
-	int image_y  = 0;
-	int source_x = 0;
-	int source_y = 0;
-    int win_Width = m_Width, win_Height = m_Height; //Make sure image is rendered differently depending on the window size
-
-	void redraw() {
-        XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
-        XFillRectangle(display, double_buffer, gc, 0, 0, win_Width, win_Height);
-		XPutImage(display, double_buffer, 
-				gc, image, 
-				source_x, source_y, 
-				image_x, image_y, 
-				m_Width, 
-				m_Height);
-        XCopyArea(display, double_buffer, window, gc,
-              0, 0, win_Width, win_Height, 0, 0);
-        XFlush(display);
-    }
-	
-	XEvent event;
 	while (XNextEvent(display, &event) == 0) {
 		switch (event.type) {
 			case Expose:
@@ -134,32 +168,29 @@ int main (int argc, char *argv[]) {
 			break;
 			
 			case ConfigureNotify:
-				if (m_Width > event.xconfigure.width) {
-					image_x  = 0;
-					source_x = (m_Width  - event.xconfigure.width)  / 2;
-				} else {
-					image_x = (event.xconfigure.width  - m_Width)  / 2;
-					source_x = 0;
+				center();
+
+				if (win_Width != event.xconfigure.width || win_Height != event.xconfigure.height) 
+				{ 
+				    
+					win_Width  = event.xconfigure.width;
+                	win_Height = event.xconfigure.height;
+                	XFreePixmap(display, double_buffer);
+                	
+					double_buffer = XCreatePixmap(
+							display, 
+							window, 
+							win_Width, 
+							win_Height,
+					DefaultDepth(display, DefaultScreen(display)));
 				}
-				if (m_Height > event.xconfigure.height) {
-					image_y  = 0;
-					source_y = (m_Height - event.xconfigure.height) / 2;
-				} else {
-					image_y = (event.xconfigure.height - m_Height) / 2;
-					source_y = 0;
-				}
-                if (win_Width != event.xconfigure.width || win_Height != event.xconfigure.height) {
-                   win_Width  = event.xconfigure.width;
-                   win_Height = event.xconfigure.height;
-                   XFreePixmap(display, double_buffer);
-                    double_buffer = XCreatePixmap(display, window, win_Width, win_Height,
-                                      DefaultDepth(display, DefaultScreen(display)));
-    }
+				
 				redraw();
 			break;
 
+			KeySym key;
 			case KeyPress:
-				KeySym key = XLookupKeysym(&event.xkey, 0);
+				key = XLookupKeysym(&event.xkey, 0);
 
 				int speed = 25;
 
