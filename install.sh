@@ -11,5 +11,5 @@ echo 'chmod +x the damn file'
 echo 'donzo'
 
 echo 'Make sure you have /usr/local/bin/ added to your $PATH pls'
-echo 'Also, run mage <filename>'
+echo 'Also, run ./mage <filename>'
 echo 'only .jpg, .jpeg and .png filetypes work'
