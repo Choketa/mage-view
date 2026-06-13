@@ -6,7 +6,7 @@ Chocketa who fixed my flickering issue. Shout out to my boy
 
 
 ```
-mage filepath
+mage <filepath>
 ```
 
 
