@@ -126,7 +126,7 @@ int main (int argc, char *argv[])
 			0x00000000);
 	
     XSetWindowBackgroundPixmap(display, window, None); //Makes sure there's no flickering when resizing the image. There is still some jiggling present when resizing from certain angles, but it's not worth fixing for now.
-	
+    XStoreName(display, window, "mage");
     inverse(); 
 	
 	XWindowAttributes wa = {0};	
